@@ -9,3 +9,5 @@ python3 main.py
 
 ## Command to get this locally
 `git clone https://github.com/greavr/easy-golf-booker.git`
+Then load it with \
+`cd easy-golf-booker`
