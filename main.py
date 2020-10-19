@@ -1,16 +1,23 @@
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 
+## Application Variables
 targetPage = ("https://hardingpark.ezlinksgolf.com/index.html#/search")
 targetDate = ""
-RequiredTimes = ["9:15 AM", "9:30 AM"]
+RequiredTimes = ["9:15 AM", "9:30 AM", "9:45 AM"]
+
+## Application logic
+# Load Page
+# Look for time values required
+# If found send TXT message
+# If not found die
 
 def Notify(FoundRange):
     # Todo
     pass
 
 def FindTimes(InputPage):
-    # For each time slot in RequiredTimes look for that text in the page, if found return the value
+    # Foreach time slot in RequiredTimes look for that text in the page, if found return the value
     result = []
     ## Itterate over values
     for aTimeSlot in RequiredTimes:
@@ -30,19 +37,14 @@ def Main():
     # Controller
     ## Load Page
     PageData = LoadPage()
-    FoundSlots = FindTimes(PageData)
+    FoundTimeSlots = FindTimes(PageData)
     ## Check if any found
-    if len(FoundSlots) > 0:
-        Notify(FoundSlots)
+    if len(FoundTimeSlots) > 0:
+        print (f"Found times {FoundTimeSlots}")
+        Notify(FoundTimeSlots)
     
     ## Else do nothing
-    
 
 
-## Application logic
-# Load Page
-# Look for time values required
-# If found send TXT message
-# If not found die
-
-
+if __name__ == "__main__":
+    Main("")
