@@ -1,5 +1,9 @@
 from debian
 
+ENV DEBIAN_FRONTEND noninteractive
+ENV USER apps
+RUN useradd apps
+
 RUN apt-get update
 RUN apt-get -y install wget zip python3 python3-pip
 RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
@@ -14,6 +18,8 @@ COPY /code /app
 WORKDIR /app
 
 RUN pip3 install -r requirements.txt
+
+USER apps
 
 EXPOSE 8080
 
