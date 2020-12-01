@@ -7,7 +7,7 @@ from twilio.rest import Client
 
 
 project_id = os.environ.get('GCP_PROJECT', '')
-target_number = os.environ.get('number','14088170403')
+target_number = os.environ.get('number','')
 account_sid = ""
 auth_token = ""
 sender_num = ""
