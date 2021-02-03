@@ -5,4 +5,5 @@ steps:
   - deploy
   - sendMessage
   - --source=Functions/sendMessage/.
-  - --trigger-topic
+  - --trigger-topic golf-bot-notify
+  - --region=us-west2
