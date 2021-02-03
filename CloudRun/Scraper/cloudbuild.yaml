@@ -1,0 +1,10 @@
+steps:
+# Build the container image
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/$PROJECT_ID/golf-scraper', '.']
+# Push the image to Container Registry
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'gcr.io/$PROJECT_ID/golf-scraper']
+# Deploy image to Cloud Run
+- name: 'gcr.io/cloud-builders/gcloud'
+  args: ['beta', 'run', 'deploy', 'golfbot-teetime-finder', '--image', 'gcr.io/$PROJECT_ID/golf-scraper', '--region', 'us-west1', '--platform', 'managed', '--allow-unauthenticated']

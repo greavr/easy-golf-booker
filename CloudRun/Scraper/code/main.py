@@ -3,7 +3,7 @@ import logging
 import os
 import sys
 import time
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from flask import Flask,jsonify
 
 import google.cloud.logging
@@ -34,7 +34,9 @@ def send_sms(DataTosend):
 
     NotificationTypes = GetNotificationTimes()
     startTime = datetime.combine(date.today(),datetime.strptime(NotificationTypes['start'], '%H:%M').time())
+    startTime.replace(tzinfo=timezone.pst)
     endTime = datetime.combine(date.today(),datetime.strptime(NotificationTypes['end'], '%H:%M').time())
+    endTime.replace(tzinfo=timezone.pst)
 
     # Notifications Disabled
     if not NotificationTypes['enabled']:
@@ -42,6 +44,7 @@ def send_sms(DataTosend):
 
     # Check if now is between notification times
     RightNow = datetime.now()
+    RightNow.replace(tzinfo=timezone.pst)
     if startTime <= RightNow <= endTime:
         logging.info("Inside Notification Window")
         publisher = pubsub_v1.PublisherClient()
