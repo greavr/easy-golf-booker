@@ -4,5 +4,5 @@ steps:
   - functions
   - deploy
   - sendMessage
-  - --source=.
+  - --source=Functions/sendMessage/.
   - --trigger-topic
