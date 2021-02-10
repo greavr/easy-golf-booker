@@ -4,6 +4,7 @@ import os
 import sys
 import time
 from datetime import date, datetime, timedelta, timezone
+import pytz
 from flask import Flask,jsonify
 
 import google.cloud.logging
@@ -32,11 +33,15 @@ def send_sms(DataTosend):
     # Publish Message to PubSub Queue to Notify
     global project_id,topic_name
 
+    #Set TimeZone
+    timezone = pytz.timezone("America/Los_Angeles")
+
     NotificationTypes = GetNotificationTimes()
+
     startTime = datetime.combine(date.today(),datetime.strptime(NotificationTypes['start'], '%H:%M').time())
-    startTime.replace(tzinfo=timezone.pst)
+    startTime = timezone.localize(startTime)
     endTime = datetime.combine(date.today(),datetime.strptime(NotificationTypes['end'], '%H:%M').time())
-    endTime.replace(tzinfo=timezone.pst)
+    endTime = timezone.localize(endTime)
 
     # Notifications Disabled
     if not NotificationTypes['enabled']:
@@ -44,7 +49,7 @@ def send_sms(DataTosend):
 
     # Check if now is between notification times
     RightNow = datetime.now()
-    RightNow.replace(tzinfo=timezone.pst)
+    RightNow = timezone.localize(RightNow)
     if startTime <= RightNow <= endTime:
         logging.info("Inside Notification Window")
         publisher = pubsub_v1.PublisherClient()
@@ -279,7 +284,7 @@ def Main():
         for aDay in DaysOfWeek:
             ## Variable for Next TargetDate
             NextDate = GetNextDate(aDay)
-            logging.info(f"Checking the site: {aCourse['Location']}. Looking for the following Tee Times {RequiredTimes} on the date: {NextDate}, for {aCourse['Course']} course(s).")
+            logging.info(f"Checking the site: {aCourse['Location']}. Looking for the following Tee Times {RequiredTimes[0]} - {RequiredTimes[-1]} on the date: {NextDate}, for {aCourse['Course']} course(s).")
 
             # Check the page content & Pass it for validation
             FoundTimeSlots = {}
