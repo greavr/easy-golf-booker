@@ -26,7 +26,7 @@ def GetNotificationTimes():
     # Now try to load the keys from DS:
     query = datastore.Client(project=project_id,namespace='golf-bot').query(kind="notificationTimes")
     results = list(query.fetch())
-    return({"start":results[0]['start'],"end":results[0]['end'], "enabled" : results[0]['enabled'], "Numbers" : results[0]['Numbers']})
+    return({"start":results[0]['start'],"end":results[0]['end'], "enabled" : results[0]['enabled'], "Numbers" : results[0]['Numbers'], "timezone" : results[0]['timezone']})
 
 # Function To Get Course List From Datastore
 def GetCourseList():

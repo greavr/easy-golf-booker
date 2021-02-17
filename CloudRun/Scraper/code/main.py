@@ -34,9 +34,8 @@ def send_sms(DataTosend):
     global project_id,topic_name
 
     #Set TimeZone
-    timezone = pytz.timezone("America/Los_Angeles")
-
     NotificationTypes = GetNotificationTimes()
+    timezone = pytz.timezone(NotificationTypes['timezone'])
 
     startTime = datetime.combine(date.today(),datetime.strptime(NotificationTypes['start'], '%H:%M').time())
     startTime = timezone.localize(startTime)
@@ -65,7 +64,7 @@ def GetNotificationTimes():
     # Now try to load the keys from DS:
     query = datastore.Client(project=project_id,namespace='golf-bot').query(kind="notificationTimes")
     results = list(query.fetch())
-    return({"start":results[0]['start'],"end":results[0]['end'], "enabled" : results[0]['enabled']})
+    return({"start":results[0]['start'],"end":results[0]['end'], "enabled" : results[0]['enabled'], "timezone" : results[0]['timezone']})
 
 # Function To Get Course List From Datastore
 def GetCourseList():

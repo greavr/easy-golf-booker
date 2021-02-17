@@ -10,77 +10,52 @@
     <form id="answers">
     <div class="float-box">
         <h2>
-            Options:
+            Search Options:
         </h2>
         <label class="label-input" for="DaysOfWeek">Pick Day(s) of the week to search for *</label><br />
-            {% if 0 in Days_Of_week %}
-                <label class="container"> Monday <input type="checkbox" value="0" name="DaysOfWeek"><span class="checkmark" checked="checked"></span></label>
-            {% else %}
-                <label class="container"> Monday <input type="checkbox" value="0" name="DaysOfWeek"><span class="checkmark"></span></label>
-            {% endif %}
-            {% if 1 in Days_Of_week %}
-                <label class="container"> Tuesday <input type="checkbox" value="1" name="DaysOfWeek"><span class="checkmark" checked="checked"></span></label>
-            {% else %}
-                <label class="container"> Tuesday <input type="checkbox" value="1" name="DaysOfWeek"><span class="checkmark"></span></label>
-            {% endif %}
-            {% if 2 in Days_Of_week %}
-                <label class="container"> Wednesday <input type="checkbox" value="2" name="DaysOfWeek"><span class="checkmark" checked="checked"></span></label>
-            {% else %}
-                <label class="container"> Wednesday <input type="checkbox" value="2" name="DaysOfWeek"><span class="checkmark"></span></label>
-            {% endif %}
-            {% if 3 in Days_Of_week %}
-                <label class="container"> Thursday <input type="checkbox" value="3" name="DaysOfWeek"><span class="checkmark" checked="checked"></span></label>
-            {% else %}
-                <label class="container"> Thursday <input type="checkbox" value="3" name="DaysOfWeek"><span class="checkmark"></span></label>
-            {% endif %}
-            {% if 4 in Days_Of_week %}
-                <label class="container"> Friday <input type="checkbox" value="4" name="DaysOfWeek"><span class="checkmark" checked="checked"></span></label>
-            {% else %}
-                <label class="container"> Friday <input type="checkbox" value="4" name="DaysOfWeek"><span class="checkmark"></span></label>
-            {% endif %}
-            {% if 5 in Days_Of_week %}
-                <label class="container"> Saturday <input type="checkbox" value="5" name="DaysOfWeek" checked="checked"><span class="checkmark"></span></label>
-            {% else %}
-                <label class="container"> Saturday <input type="checkbox" value="5" name="DaysOfWeek"><span class="checkmark"></span></label>
-            {% endif %}
-            {% if 6 in Days_Of_week %}
-                <label class="container"> Sunday <input type="checkbox" value="6" name="DaysOfWeek" checked="checked"><span class="checkmark"></span></label>
-            {% else %}
-                <label class="container"> Sunday <input type="checkbox" value="6" name="DaysOfWeek" ><span class="checkmark"></span></label>
-            {% endif %}
+        <label class="container"> Monday <input type="checkbox" value="0" name="DaysOfWeek" {% if 0 in Days_Of_week %}checked="checked"{% endif %}><span class="checkmark"></span></label>
+        <label class="container"> Tuesday <input type="checkbox" value="1" name="DaysOfWeek" {% if 1 in Days_Of_week %}checked="checked"{% endif %}><span class="checkmark"></span></label>
+        <label class="container"> Wednesday <input type="checkbox" value="2" name="DaysOfWeek" {% if 2 in Days_Of_week %}checked="checked"{% endif %}><span class="checkmark"></span></label>
+        <label class="container"> Thursday <input type="checkbox" value="3" name="DaysOfWeek" {% if 3 in Days_Of_week %}checked="checked"{% endif %}><span class="checkmark"></span></label>
+        <label class="container"> Friday <input type="checkbox" value="4" name="DaysOfWeek" {% if 4 in Days_Of_week %}checked="checked"{% endif %}><span class="checkmark"></span></label>
+        <label class="container"> Saturday <input type="checkbox" value="5" name="DaysOfWeek" {% if 5 in Days_Of_week %}checked="checked"{% endif %}><span class="checkmark"></span></label>
+        <label class="container"> Sunday <input type="checkbox" value="6" name="DaysOfWeek" {% if 6 in Days_Of_week %}checked="checked"{% endif %}><span class="checkmark"></span></label>
             
         <label class="label-input" for="players">Please Select Number of Players *</label><br />
         <input class="number-input" type="text" name="players" value="{{ Player_Count|join(', ') }}"><br />
+
+        <label class="label-input" for="teeTimeStart">Search For Tee Time After*</label><br />
+        <input class="time-input" type="time" name="teeTimeStart" value="{{ Search_Times.start}}"><br />
+    <label class="label-input" for="teeTimeEnd">Search For Tee Time Before*</label><br />
+        <input class="time-input" type="time" name="teeTimeEnd" value="{{ Search_Times.end}}"><br />
     </div>
     <div class="float-box">
         <h2>
             Notification Options:
         </h2>
-        <label class="label-input" for="Numbers">Please Enter 10 digit Contact Numbers, seperated by a comma *</label><br />
+        <label class="label-input" for="Numbers">Contact Number(s) *</label><br />
         <input class="text-input" type="text" name="numbers" placeholder="Phone #" width="20" value="{{ Notification_Times.Numbers|join(', ') }}"><br />
-        {% if Notification_Times.enabled == True %}
-            <label class="container"> Notification Enabled? <input type="checkbox" name="Enabled" checked="checked"><span class="checkmark"></span></label>
-        {% else %}
-            <label class="container"> Notification Enabled? <input type="checkbox" name="Enabled"><span class="checkmark"></span></label>
-        {% endif %}
+        <label class="container"> Notification Enabled? <input type="checkbox" name="Enabled" {% if Notification_Times.enabled == True %}checked="checked" {% endif %}><span class="checkmark"></span></label>
         <label class="label-input" for="start">Notify Me After*</label><br />
         <input class="time-input" type="time" name="start" value="{{ Notification_Times.start }}"><br />
         <label class="label-input" for="end">Notify Me Before*</label><br />
         <input class="time-input" type="time" name="end" value="{{ Notification_Times.end }}"><br />
-    </div>
-    <div class="float-box">
-        <h2>
-            Search Options:
-        </h2>
-        <label class="label-input" for="teeTimeStart">Search For Tee Time After*</label><br />
-            <input class="time-input" type="time" name="teeTimeStart" value="{{ Search_Times.start}}"><br />
-        <label class="label-input" for="teeTimeEnd">Search For Tee Time Before*</label><br />
-            <input class="time-input" type="time" name="teeTimeEnd" value="{{ Search_Times.end}}"><br />
+        <label class="label-input" for="end">Time Zone*</label><br />
+        <select class="select-input" name="timezone">
+            <option value="America/Puerto_Rico" {% if Notification_Times.timezone == "America/Puerto_Rico" %}selected{% endif %}>Puerto Rico (Atlantic)</option>
+            <option value="America/New_York" {% if Notification_Times.timezone == "America/New_York" %}selected{% endif %}>New York (Eastern)</option>
+            <option value="America/Chicago" {% if Notification_Times.timezone == "America/Chicago" %}selected{% endif %}>Chicago (Central)</option>
+            <option value="America/Denver" {% if Notification_Times.timezone == "America/Denver" %}selected{% endif %}>Denver (Mountain)</option>
+            <option value="America/Phoenix" {% if Notification_Times.timezone == "America/Phoenix" %}selected{% endif %}>Phoenix (MST)</option>
+            <option value="America/Los_Angeles" {% if Notification_Times.timezone == "America/Los_Angeles" %}selected{% endif %}>Los Angeles (Pacific)</option>
+            <option value="America/Anchorage" {% if Notification_Times.timezone == "America/Anchorage" %}selected{% endif %}>Anchorage (Alaska)</option>
+            <option value="Pacific/Honolulu" {% if Notification_Times.timezone == "America/Honolulu" %}selected{% endif %}>Honolulu (Hawaii)</option>
+        <select></select>
     </div>
     </form>
 
     <div class="form-footer">
-        Status: Saved
+        Status: <div id="savestatus">Saved</div>
         (Last Updated: <div id="UpdateTime">XXXX</div>)
     </form>
        
