@@ -4,22 +4,19 @@ import os
 import sys
 import time
 from datetime import date, datetime, timedelta, timezone
-import pytz
-from flask import Flask,jsonify
+import collections 
 
 import google.cloud.logging
+import pytz
 import requests
-from bs4 import BeautifulSoup
+from flask import Flask, jsonify
 from google.cloud import datastore, pubsub_v1
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.keys import Keys
+
+from golfcourse import golfcourse
 
 ## Application Variables
 LoggingClient = google.cloud.logging.Client()
-CourseList = []
-RequiredTimes = []
-DaysOfWeek = []
+GolfCourseList = []
 
 ## Get Envars
 project_id = os.environ.get('GCP_PROJECT', '')
@@ -49,6 +46,9 @@ def send_sms(DataTosend):
     # Check if now is between notification times
     RightNow = datetime.now()
     RightNow = timezone.localize(RightNow)
+
+    print(f"ST: {startTime}, ET: {endTime}, RN: {RightNow}")
+
     if startTime <= RightNow <= endTime:
         logging.info("Inside Notification Window")
         publisher = pubsub_v1.PublisherClient()
@@ -56,6 +56,36 @@ def send_sms(DataTosend):
         future = publisher.publish(topic_path, DataTosend.encode("utf-8"))
     else:
         logging.info("Outside Notification Window")
+
+# Send notification of date Found
+def Notify(NumSlotsFound,FoundRanges,DateFound, Course, Players):
+    # Notification process
+    ## SendSMS validates timeframe for communication
+    ## This function looks for values to notify on
+
+    # Build txt body:
+    Body = f"Found {str(NumSlotsFound)} slot(s) on the following date {str(DateFound)} for {Players} players at {Course}:"
+    Body += "\n" + str(FoundRanges)
+    # Log Txt Body
+    logging.info(f"Sending Txt Message with the following details: {Body}")
+
+    # Send SMS Notification
+    send_sms(DataTosend=Body)
+
+# Function To Build GolfCourse Object
+def BuildGolfCourseList():
+    global GolfCourseList
+    # Get Search Times
+    AllSearchTimes = BuildSearchTimes()
+    AllOptions = GetOptions()
+
+    # Get Course List from Datastore
+    CourseList = GetCourseList()
+    
+    #Build Array Of GolfCourse Objects
+    for aLocation in CourseList:
+        thisGolf = golfcourse(LocationName=aLocation["Name"],CourseURL=aLocation["Location"], CourseNames=aLocation["Course"], SearchTimes=AllSearchTimes, PlayerElement=aLocation["PlayerElement"], DateElement=aLocation["DateElement"], SearchDates=AllOptions["DaysOfWeek"], SearchPlayers=AllOptions["Players"])
+        GolfCourseList.append(thisGolf)
 
 # Function To Get Notification Times from DataStore
 def GetNotificationTimes():
@@ -74,42 +104,44 @@ def GetCourseList():
     datastore_values = list(query.fetch())
     results = []
     for aSet in datastore_values:
-        aResult = { "Name" : aSet['Name'], "Location": aSet['Location'], "KeyElement" : aSet['KeyElement'], "Course" : aSet['Course']}
+        aResult = { "Name" : aSet['Name'], "Location": aSet['Location'], "DateElement" : aSet['DateElement'], "Course" : aSet['Course'], "PlayerElement" : aSet['PlayerElement']}
         results.append(aResult)
     
     return results
 
-# Function To Get Notification Times from DataStore
-def GetSearchTimes():
-    global project_id
-    # Now try to load the keys from DS:
-    query = datastore.Client(project=project_id,namespace='golf-bot').query(kind="searchTimes")
-    results = list(query.fetch())
-    return({"start":results[0]['teeTimeStart'],"end":results[0]['teeTimeEnd']})
-
 # Function To Get Day Of Week from Datastore
-def GetDayOfWeek():
+def GetOptions():
     global project_id
     # Now try to load the keys from DS:
     query = datastore.Client(project=project_id,namespace='golf-bot').query(kind="Options")
     results = list(query.fetch())
-
-    return(list(map(int,results[0]['DaysOfWeek'].split(','))))
+    return(results[0])
+    #return({"Days" : list(map(int,results[0]['DaysOfWeek'].split(','))), "Players" : list(map(int,results[0]['Players'].split(','))) })
 
 # Function To Save Times to Datastore
-def SaveFoundTimesToDataStore(Location: str, TimesToSave, Notified: bool):
+def SaveFoundTimesToDataStore(Location, DataToSave):
     global project_id
-    # Create a Cloud Datastore client.
-    datastore_client = datastore.Client(project=project_id,namespace='golf-bot')
-    # Create the Cloud Datastore key for the new entity.
-    kind = "TeeTimesFound"
-    name = Location
-    task_key = datastore_client.key(kind,name)
-    task = datastore.Entity(key=task_key)
-    task['notify'] = Notified
-    task['times'] = { 'values' : TimesToSave }
 
-    datastore_client.put(task)
+    namespace='golf-bot'
+    kind = "TeeTimesFound"
+
+    #Create Array of data elements
+    DataToAdd = []
+    for aDataRow in DataToSave:
+        DataToAdd.append({ 'PlayerCount' : aDataRow["PlayerCount"], "Times": aDataRow['Times'], "Date": aDataRow["Date"] })
+
+    try:
+        # Create a Cloud Datastore client.
+        datastore_client = datastore.Client(project=project_id,namespace=namespace)
+        # Create the Cloud Datastore key for the new entity.
+        task_key = datastore_client.key(kind,Location)
+        task = datastore.Entity(key=task_key)
+        task['Data'] = DataToAdd
+        task['TimeStamp'] = datetime.now()
+        datastore_client.put(task)
+    except:
+        e = sys.exc_info()
+        logging.error(f"Error Occured: {e}, Project: {project_id}, NameSpace: {namespace}, Kind: {kind}, Name: {Location}, Data: {DataToSave}")
 
 # Get values from Datastore
 def GetFoundTimes(Location: str):
@@ -120,29 +152,20 @@ def GetFoundTimes(Location: str):
     
     query = client.get(key)
     if query:
-        print(query['times'])
-        return(query['times'])
+        return(query['Data'])
     else:
         return([])
-
-# Function To Get Next X day of the week
-def GetNextDate(DayOfWeek):
-    ## Input Values
-    ## 0 Monday - 6 Sunday
-    ## Output Values
-    ## Date of next given DOW, formated 10/12/2020
-
-    d = datetime.now()
-    while d.weekday() != DayOfWeek:
-        d = d + timedelta(days=1)
-
-    # Return the format    
-    return d.strftime('%m/%d/%Y')
 
 # Function to build out the search times
 def BuildSearchTimes():
     # Get start and end values from DataStore
-    SearchTimes = GetSearchTimes()
+    global project_id
+    # Now try to load the keys from DS:
+    query = datastore.Client(project=project_id,namespace='golf-bot').query(kind="searchTimes")
+    results = list(query.fetch())
+    SearchTimes = {"start":results[0]['teeTimeStart'],"end":results[0]['teeTimeEnd']}
+
+    # Create array of times
     startTime = datetime.strptime(SearchTimes['start'], '%H:%M').time()
     endTime = datetime.strptime(SearchTimes['end'], '%H:%M').time()
 
@@ -158,113 +181,10 @@ def BuildSearchTimes():
     
     return array
 
-# Function to compare lists
-def Diff(li1, li2):
-    li_dif = [i for i in li1 + li2 if i not in li1 or i not in li2]
-    return li_dif
-
-# Send notification of date Found
-def Notify(NumSlotsFound,FoundRanges,DateFound):
-    # Notification process
-    ## SendSMS validates timeframe for communication
-    ## This function looks for values to notify on
-
-
-
-    # First check if any existing values have been notified for:
-    for aRange in FoundRanges:
-        # Build txt body:
-        Body = f"Found {str(NumSlotsFound)} slot(s) on the following date {str(DateFound)} for {aRange}:"
-        datastoreValues = GetFoundTimes(Location=aRange)
-        Body += "\n" + str(FoundRanges[aRange])
-
-        ### TODO FIX THIS MESS
-        # If Empty add them all and save to DataStore
-        # if not datastoreValues:
-        #     Body += "\n" + str(FoundRanges[aRange])
-        # else:
-        #     #Now need to compare and save the new range to dataStore
-        #     TimesNowNotAvailable = Diff(list(FoundRanges[aRange]),datastoreValues)
-        #     Body += "\n Times not available anymore: " + str(TimesNowNotAvailable)
-        #     print(TimesNowNotAvailable)
-        #     TimesNowAvailable = Diff(datastoreValues,list(FoundRanges[aRange]))
-        #     Body += "\n New Times available : " + str(TimesNowAvailable)
-        #     print(TimesNowNotAvailable)
-
-        # Save the new time slots to Datastore
-        SaveFoundTimesToDataStore(Location=aRange,TimesToSave=str(FoundRanges[aRange]),Notified=True)
-        
-        # Log Txt Body
-        logging.info(f"Sending Txt Message with the following details: {Body}")
-
-        # Send SMS Notification
-        send_sms(DataTosend=Body)
-
-# Function to find the slots availble on the return value
-def FindTimes(InputPage,aCourse=""):
-    global RequiredTimes
-    # Foreach time slot in RequiredTimes look for that text in the page, if found return the value
-    results = []
-
-    if aCourse == "" or aCourse == "*":
-        ## Itterate over values for any course
-        for aTimeSlot in RequiredTimes:
-            # look for time slots
-            if aTimeSlot in InputPage:
-                # Time slot found!
-                results.append(aTimeSlot)
-    else:
-        # Load Page into Beautiful Soup to find values
-        soup = BeautifulSoup(InputPage, 'html.parser')
-        # Each slot is a list item (li). Itterate through li's
-        for li in soup.findAll('li'):
-            # Now Itterate over times and find matching course title
-            for aTimeSlot in RequiredTimes:
-                # look for time slots
-                if (str(aTimeSlot) in li.text) and (aCourse in li.text):
-                    # Time slot found!
-                    results.append(aTimeSlot)
-
-    ## Return found list
-    return results
-
-# Function To load the page with target data
-def LoadPage(TargetPage, TargetDate, KeyElement):
-    # Todo: Build Selinum bot to open page one then submit
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--window-size=1920x1080")
-    chrome_options.add_argument("--incognito")
-    chrome_options.add_argument("--no-sandbox")
-    browser = webdriver.Chrome(options=chrome_options)
-
-    #Load Page
-    browser.get(TargetPage)
-    time.sleep(1)
-
-    #If redirected to /preSearch then hit submit
-    currentURL = browser.current_url
-    if currentURL.find("preSearch") != -1:
-        time.sleep(1)
-        btnSubmit = browser.find_element_by_xpath("//button[contains(@class,'btn')]")
-        btnSubmit.click()
-        time.sleep(2)
-        btnSubmit = browser.find_element_by_xpath("//button[contains(@class,'btn')]")
-        btnSubmit.click()
-        time.sleep(1)
-
-    DatePicker = browser.find_element_by_id(KeyElement)
-    DatePicker.clear()
-    DatePicker.send_keys(TargetDate)
-    DatePicker.send_keys(Keys.RETURN)
-    # Wait until data loaded
-    time.sleep(1)
-    return browser.page_source
-
 # Main Loop
 @app.route("/", methods=['GET'])
 def Main():
-    global DaysOfWeek, RequiredTimes, CourseList
+    global GolfCourseList
     # Main Function
 
     # Setup the logger
@@ -272,50 +192,55 @@ def Main():
     LoggingClient.setup_logging()
 
     # Get Search Values from Datastore
-    DaysOfWeek = GetDayOfWeek()
-    RequiredTimes = BuildSearchTimes()
-    CourseList = GetCourseList()
-    print(CourseList)
+    BuildGolfCourseList()
+
     # Itterate through Course
-    for aCourse in CourseList:
-        # Itterate over Days of the week to search
-        DaysOfWeek.sort()
-        for aDay in DaysOfWeek:
-            ## Variable for Next TargetDate
-            NextDate = GetNextDate(aDay)
-            logging.info(f"Checking the site: {aCourse['Location']}. Looking for the following Tee Times {RequiredTimes[0]} - {RequiredTimes[-1]} on the date: {NextDate}, for {aCourse['Course']} course(s).")
+    for aGolfCourse in GolfCourseList:
+        aGolfCourse.FindSpots()
 
-            # Check the page content & Pass it for validation
-            FoundTimeSlots = {}
-            if aCourse["Course"] == "*":
-                ## Load the page and return the value
-                ReturnedPage = LoadPage(TargetPage=aCourse["Location"], TargetDate=NextDate,KeyElement=aCourse["KeyElement"])
-                ## Now Check for found time
-                FoundTimeSlots[aCourse["Name"]] = FindTimes(InputPage=ReturnedPage)
-            else:
-                # Itterate over course
-                for aSubCourse in aCourse["Course"]:
-                    ## Load the page and return the value
-                    ReturnedPage = LoadPage(TargetPage=aCourse["Location"], TargetDate=NextDate,KeyElement=aCourse["KeyElement"])
-                    aResultSet = FindTimes(InputPage=ReturnedPage,aCourse=aSubCourse)
-                    # Validate there are times found
-                    if aResultSet:
-                        FoundTimeSlots[aSubCourse] = aResultSet
-            
-            ## Check if any found
-            NumOfSlotsFound = 0
-            for aKey in FoundTimeSlots:
-                if FoundTimeSlots[aKey]:
-                    NumOfSlotsFound += len(FoundTimeSlots[aKey])
+        ## Check if any times found
+        if not any(aGolfCourse.FoundTimes):
+            logging.info(f"Not times found for {aGolfCourse.LocationName}.")
+        else:
+            # Ittereate over found 
+            for aFoundSet in aGolfCourse.FoundTimes:
+                # Recall last search results looking for changes
+                PreviousFoundData = GetFoundTimes(aFoundSet)
+                ChangesFound = []
+                # Compare Results
+                if not PreviousFoundData:
+                    # No previous results found
+                    NewDataSet = aGolfCourse.FoundTimes[aFoundSet]
+                    SaveFoundTimesToDataStore(Location=aFoundSet,DataToSave=NewDataSet)
+                    # Itterate through sub sets of data
+                    for aDataRow in NewDataSet:
+                        ChangesFound.append({"Date" : aDataRow["Date"], "Times" : aDataRow["Times"], "NumofSlotsFound" : len(aDataRow["Times"]), "Players" : aDataRow["PlayerCount"]})
+                    
+                else:
+                    # Compare results set
+                    JustFoundData = aGolfCourse.FoundTimes[aFoundSet]
 
-            if NumOfSlotsFound > 0:
-                ## Some Values found, sending txt
-                logging.info (f"Found {NumOfSlotsFound} times: {FoundTimeSlots}, on {NextDate}")
-                Notify(NumOfSlotsFound, FoundTimeSlots,NextDate)
+                    # Itterate over both lists looking for differences
+                    for aNewDataSet in JustFoundData: # New datas
+                        for aOldDataSet in PreviousFoundData: # Old datas
+                            #Check date & player count
+                            if (aOldDataSet["PlayerCount"] == aNewDataSet["PlayerCount"]) and (aOldDataSet["Date"] == aNewDataSet["Date"]):
+                                # Check Times Found Lists
+                                print(f"OldTimes: {aOldDataSet['Times']} -- NewTimes: {aNewDataSet['Times']}")
+                                if not collections.Counter(aOldDataSet["Times"]) == collections.Counter(aNewDataSet["Times"]):
+                                    SaveFoundTimesToDataStore(Location=aFoundSet,DataToSave=aGolfCourse.FoundTimes[aFoundSet])
+                                    ChangesFound.append({"Date" : aNewDataSet["Date"], "Times" : aNewDataSet["Times"], "NumofSlotsFound" : len(aNewDataSet["Times"]), "Players" : aNewDataSet["PlayerCount"]})
+
+            # If Changes Found Send TXT
+            if len(ChangesFound) > 0:
+                # Itterate over found values
+                for aResultSet in ChangesFound:
+                    logging.info (f"Found {aResultSet['NumofSlotsFound']}, Times: {aResultSet['Times']}, on {aResultSet['Date']} for {aResultSet['Players']} players.")
+                    Notify(NumSlotsFound=aResultSet['NumofSlotsFound'], FoundRanges=aResultSet['Times'],DateFound=aResultSet['Date'],Course=aFoundSet, Players=aResultSet['Players'] )
             else:
-                logging.info (f"Found {NumOfSlotsFound} times")
-            
-            ## End
+                # Found Zero Changes
+                logging.info (f"Found {len(ChangesFound)} new times")             
+
 
     return jsonify(success=True)
 

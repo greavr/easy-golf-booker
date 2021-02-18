@@ -7,5 +7,5 @@ steps:
   args: ['push', 'gcr.io/$PROJECT_ID/golf-scraper']
 # Deploy image to Cloud Run
 - name: 'gcr.io/cloud-builders/gcloud'
-  args: ['beta', 'run', 'deploy', 'golfbot-teetime-finder', '--image', 'gcr.io/$PROJECT_ID/golf-scraper', '--region', 'us-west1', '--platform', 'managed', '--allow-unauthenticated']
+  args: ['beta', 'run', 'deploy', 'golfbot-teetime-finder', '--image', 'gcr.io/$PROJECT_ID/golf-scraper', '--region', 'us-west1', '--platform', 'managed', '--allow-unauthenticated' ,'--set-env-vars', 'GCP_PROJECT' , $PROJECT_ID ]
 timeout: 1800s
