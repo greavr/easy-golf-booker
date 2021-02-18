@@ -1,10 +1,10 @@
+import collections
 import json
 import logging
 import os
 import sys
 import time
 from datetime import date, datetime, timedelta, timezone
-import collections 
 
 import google.cloud.logging
 import pytz
@@ -35,9 +35,9 @@ def send_sms(DataTosend):
     timezone = pytz.timezone(NotificationTypes['timezone'])
 
     startTime = datetime.combine(date.today(),datetime.strptime(NotificationTypes['start'], '%H:%M').time())
-    startTime = timezone.localize(startTime)
+    #startTime = timezone.localize(startTime)
     endTime = datetime.combine(date.today(),datetime.strptime(NotificationTypes['end'], '%H:%M').time())
-    endTime = timezone.localize(endTime)
+    #endTime = timezone.localize(endTime)
 
     # Notifications Disabled
     if not NotificationTypes['enabled']:
@@ -45,7 +45,7 @@ def send_sms(DataTosend):
 
     # Check if now is between notification times
     RightNow = datetime.now()
-    RightNow = timezone.localize(RightNow)
+    #RightNow = timezone.localize(RightNow)
 
     print(f"ST: {startTime}, ET: {endTime}, RN: {RightNow}")
 
