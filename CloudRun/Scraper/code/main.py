@@ -8,6 +8,7 @@ from datetime import date, datetime, timedelta, timezone
 
 import google.cloud.logging
 import pytz
+from pytz import reference
 import requests
 from flask import Flask, jsonify
 from google.cloud import datastore, pubsub_v1
@@ -47,7 +48,7 @@ def send_sms(DataTosend):
     RightNow = datetime.now()
     RightNow = timezone.localize(RightNow)
 
-    print(f"ST: {startTime}, ET: {endTime}, RN: {RightNow}")
+    print(f"ST: {startTime}, ET: {endTime}, RN: {RightNow}, RN-NO-TZ: {datetime.now()}, TimeZone: {reference.LocalTimezone().tzname(datetime.now())}")
 
     if startTime <= RightNow <= endTime:
         logging.info("Inside Notification Window")
@@ -232,7 +233,7 @@ def Main():
             if len(ChangesFound) > 0:
                 # Itterate over found values
                 for aResultSet in ChangesFound:
-                    if len(aResultSet['Times']) > 0:
+                    if aResultSet['NumofSlotsFound'] > 0:
                         logging.info (f"Found {aResultSet['NumofSlotsFound']}, Times: {aResultSet['Times']}, on {aResultSet['Date']} for {aResultSet['Players']} players.")
                         Notify(NumSlotsFound=aResultSet['NumofSlotsFound'], FoundRanges=aResultSet['Times'],DateFound=aResultSet['Date'],Course=aFoundSet, Players=aResultSet['Players'] )
             else:
