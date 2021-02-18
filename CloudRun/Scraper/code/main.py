@@ -62,7 +62,7 @@ def Notify(NumSlotsFound,FoundRanges,DateFound, Course, Players):
     # Notification process
     ## SendSMS validates timeframe for communication
     ## This function looks for values to notify on
-    if NumSlotsFound = 0:
+    if NumSlotsFound == 0:
         return
 
     # Build txt body:
@@ -189,10 +189,6 @@ def Main():
     global GolfCourseList
     # Main Function
 
-    # Setup the logger
-    LoggingClient.get_default_handler()
-    LoggingClient.setup_logging()
-
     # Get Search Values from Datastore
     BuildGolfCourseList()
 
@@ -227,8 +223,7 @@ def Main():
                         for aOldDataSet in PreviousFoundData: # Old datas
                             #Check date & player count
                             if (aOldDataSet["PlayerCount"] == aNewDataSet["PlayerCount"]) and (aOldDataSet["Date"] == aNewDataSet["Date"]):
-                                # Check Times Found Lists
-                                print(f"OldTimes: {aOldDataSet['Times']} -- NewTimes: {aNewDataSet['Times']}")
+                                # Check Times Found Lists   
                                 if not collections.Counter(aOldDataSet["Times"]) == collections.Counter(aNewDataSet["Times"]):
                                     SaveFoundTimesToDataStore(Location=aFoundSet,DataToSave=aGolfCourse.FoundTimes[aFoundSet])
                                     ChangesFound.append({"Date" : aNewDataSet["Date"], "Times" : aNewDataSet["Times"], "NumofSlotsFound" : len(aNewDataSet["Times"]), "Players" : aNewDataSet["PlayerCount"]})
@@ -237,8 +232,9 @@ def Main():
             if len(ChangesFound) > 0:
                 # Itterate over found values
                 for aResultSet in ChangesFound:
-                    logging.info (f"Found {aResultSet['NumofSlotsFound']}, Times: {aResultSet['Times']}, on {aResultSet['Date']} for {aResultSet['Players']} players.")
-                    Notify(NumSlotsFound=aResultSet['NumofSlotsFound'], FoundRanges=aResultSet['Times'],DateFound=aResultSet['Date'],Course=aFoundSet, Players=aResultSet['Players'] )
+                    if len(aResultSet['Times']) > 0:
+                        logging.info (f"Found {aResultSet['NumofSlotsFound']}, Times: {aResultSet['Times']}, on {aResultSet['Date']} for {aResultSet['Players']} players.")
+                        Notify(NumSlotsFound=aResultSet['NumofSlotsFound'], FoundRanges=aResultSet['Times'],DateFound=aResultSet['Date'],Course=aFoundSet, Players=aResultSet['Players'] )
             else:
                 # Found Zero Changes
                 logging.info (f"Found {len(ChangesFound)} new times")             
@@ -247,6 +243,9 @@ def Main():
     return jsonify(success=True)
 
 if __name__ == "__main__":
-   ## Run APP
+    ## Run APP
+    # Setup the logger
+    LoggingClient.get_default_handler()
+    LoggingClient.setup_logging()
     app.run(host='0.0.0.0', port=8080)
     
