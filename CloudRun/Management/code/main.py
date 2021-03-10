@@ -3,6 +3,7 @@ from flask import Flask, flash, redirect, render_template, request
 import os
 from google.cloud import datastore
 import google.cloud.logging
+import json
 
 # App Config
 app = Flask(__name__)
@@ -57,8 +58,14 @@ def GetOptions():
     results = list(query.fetch())
 
     return(results)
-    #DaysOfWeek = list(map(int,results[0]['DaysOfWeek'].split(',')))
-    #Players = list(map(int,results[0]['Players'].split(',')))
+
+#Function To Get Log Data
+def GetLogData():
+    global project_id
+    # Now try to load the keys from DS:
+    query = datastore.Client(project=project_id,namespace='golf-bot').query(kind="TeeTimeLog")
+    results = list(query.fetch())
+    return(results)
 
 # Function to save value to DataStore
 def SaveValue(ValueName: str, ValueItem: str, DataStoreKind: str):
@@ -75,6 +82,14 @@ def GetValues():
     Players = list(map(int,AllOptions[0]['Players'].split(',')))
     print(f"{NotificationTimes}, {CourseList}, {SearchTimes}, {DaysOfWeek}, {Players}")
 
+# Logs
+@app.route("/logs", methods=['GET','POST'])
+def GetLogs():
+    DataStoreLogData = GetLogData()
+    for aData in DataStoreLogData:
+        print(aData)
+    return render_template('logs.html',LogData=DataStoreLogData)
+
 #API EndPoint
 @app.route("/save", methods=['POST'])
 def save(valuesToSave=[]):
@@ -84,6 +99,11 @@ def save(valuesToSave=[]):
 # Function to refresh the page
 @app.route("/load", methods=['GET'])
 def load():
+    pass
+
+# Function to refresh the page
+@app.route("/about", methods=['GET'])
+def about():
     pass
 
 #Edit Values Handler
@@ -96,7 +116,6 @@ def edit():
 #Main Function handler
 @app.route("/", methods=['GET'])
 def main():
-
     return render_template('index.html')
 
 if __name__ == "__main__":

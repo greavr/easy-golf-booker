@@ -5,6 +5,7 @@ import os
 import sys
 import time
 from datetime import date, datetime, timedelta, timezone
+import random, string
 
 import google.cloud.logging
 import pytz
@@ -146,6 +147,35 @@ def SaveFoundTimesToDataStore(Location, DataToSave):
         e = sys.exc_info()
         logging.error(f"Error Occured: {e}, Project: {project_id}, NameSpace: {namespace}, Kind: {kind}, Name: {Location}, Data: {DataToSave}")
 
+# Function To save All Found Times to Datastore
+def SaveFoundTimesLogs(aGolfCourse):
+    global project_id
+
+    # DataStore Keys
+    namespace='golf-bot'
+    kind = "TeeTimeLog"
+
+    # Itterate over values
+    for aCourse in aGolfCourse.FoundTimes:
+        for ThisData in aGolfCourse.FoundTimes[aCourse]: 
+            aKey=''.join(random.choice(string.ascii_letters) for i in range(7))
+            # Try writing data 
+            try:
+                # Create a Cloud Datastore client.
+                datastore_client = datastore.Client(project=project_id,namespace=namespace)
+                # Create the Cloud Datastore key for the new entity.
+                task_key = datastore_client.key(kind,aKey)
+                task = datastore.Entity(key=task_key)
+                task['CourseName'] = aCourse
+                task['PlayerCount'] = ThisData["PlayerCount"]
+                task['Date'] = ThisData["Date"]
+                task['Times'] = ThisData["Times"]
+                task['LastUpdateTimeStamp'] = datetime.now()
+                datastore_client.put(task)
+            except:
+                e = sys.exc_info()
+                logging.error(f"Error Occured: {e}, Project: {project_id}, NameSpace: {namespace}, Kind: {kind}, Name: {aKey}")
+
 # Get values from Datastore
 def GetFoundTimes(Location: str):
     global project_id
@@ -201,6 +231,9 @@ def Main():
         if not any(aGolfCourse.FoundTimes):
             logging.info(f"Not times found for {aGolfCourse.LocationName}.")
         else:
+            ## Save Values to Log
+            SaveFoundTimesLogs(aGolfCourse)
+
             # Ittereate over found 
             for aFoundSet in aGolfCourse.FoundTimes:
                 # Recall last search results looking for changes

@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<ul class="sidenav">
+    <li><a href="/">Home</a></li>
+    <li><a  href="/edit">Edit</a></li>
+    <li><a class="active" href="/logs">Logs</a></li>
+    <li class="right"><a href="/about">About</a></li>
+</ul>
+<div class="content">
+    <h3> Audit Logs </h3>
+    <div class="float-box">
+      <!-- Tab links -->
+      <div class="tab">
+        {% for aItem in LogData %}
+          <button class="tablinks" onclick="openCity(event, '{{ aItem }}')">{{ aItem }}</button>
+        {% endfor %}
+      </div>
+  
+      <!-- Tab content -->
+      {% for aItem in LogData %}
+        <div id="{{ aItem['TeeTimeLog'] }}" class="tabcontent">
+          <h3>{{ aItem.TeeTimeLog }}</h3>
+          {{ aItem['Data'] }}
+        </div>
+        {% endfor %}
+        <br />
+        <button id="RefreshTimes" onclick="RefreshData()" type="button">Refresh Data</button>
+    </div>
+</div>
+{% endblock %}
