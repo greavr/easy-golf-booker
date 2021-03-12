@@ -130,6 +130,13 @@ input[type=text]:focus, input[type=time]:focus, input[type=number]:focus, select
   transform: rotate(45deg);
 }
 
+.header {
+  background-color: #2196F3;
+  color: white;
+  text-align: center;
+  padding: 15px;
+}
+
 .label-input {
   display: inline-block;
   float: left;
@@ -149,13 +156,14 @@ input[type=text]:focus, input[type=time]:focus, input[type=number]:focus, select
   display: block;
   margin-right: auto;
   margin-left: auto;
+  width: 100%;
 }
 
 .float-box {
   float:left;
   background-color: #f8f8f8;
   padding: 10px;
-  width:33%;
+  width:30%;
 }
 
 .float-box-log {
@@ -255,4 +263,14 @@ td {
 table {
   border-collapse: collapse;
   width: 100%;
+}
+
+h4 {
+  font-size: 0.8em;
+  color: rgb(100, 98, 98);
+}
+
+h5 {
+  color: rgb(61, 61, 61);
+  font-size: 1.1em;
 }

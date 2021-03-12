@@ -1,15 +1,16 @@
+import json
+import logging
+import sys
+import time
+from datetime import date, datetime, timedelta, timezone
+
+import google.cloud.logging
+from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import Select
-from bs4 import BeautifulSoup
 
-import google.cloud.logging
-import logging
-import json
-import sys
-import time
-from datetime import date, datetime, timedelta, timezone
 
 class golfcourse:
     # Class to find and store session info

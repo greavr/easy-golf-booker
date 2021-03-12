@@ -8,13 +8,15 @@
     <li class="right"><a href="/about">About</a></li>
 </ul>
 <div class="content">
-    <h3> Last Found Availability </h3>
+  <div class="header">
+   Last Found Times
+  </div>
     <h4>{{ LastUpdateTime }}</h4>
     <hr />
     {% for key, value in FoundTimes.items()%}
-        {{ key }}<br />
+        <h5>{{ key }}</h5>
         <table>
-            <tr><th>Date</th><th>Player Count</th><th>Times Found</th></tr>
+            <tr><th width="15%">Date</th><th width="15%">Player Count</th><th>Times Found</th></tr>
             {% for arow in value %}
               <tr>
                 <td>{{ arow['Date'] }}</td>

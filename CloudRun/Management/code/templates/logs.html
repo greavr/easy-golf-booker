@@ -8,7 +8,9 @@
     <li class="right"><a href="/about">About</a></li>
 </ul>
 <div class="content">
-    <h3> Audit Logs </h3>
+  <div class="header">
+    App Logs
+  </div>
     <div class="float-box-log">
       <!-- Tab links -->
       <div class="tab">
@@ -21,7 +23,7 @@
       {% for key, value in LogData.items()%}
         <div id="{{ key }}" class="tabcontent">
             <table>
-              <tr><th>Course Name</th><th>Date</th><th>Player Count</th><th>Times Found</th></tr>
+              <tr><th width="15%">Course Name</th><th width="15%">Date</th><th width="15%">Player Count</th><th>Times Found</th></tr>
               {% for arow in value %}
                 <tr>
                   <td>{{ arow['CourseName'] }}</td>

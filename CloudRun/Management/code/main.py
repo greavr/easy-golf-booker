@@ -39,7 +39,7 @@ def GetCourseList():
     datastore_values = list(query.fetch())
     results = []
     for aSet in datastore_values:
-        aResult = { "Name" : aSet['Name'], "Location": aSet['Location'], "KeyElement" : aSet['KeyElement'], "Course" : aSet['Course']}
+        aResult = { "Name" : aSet['Name'], "Location": aSet['Location'], "DateElement" : aSet['DateElement'], "Course" : aSet['Course'], "PlayerElement": aSet['PlayerElement']}
         results.append(aResult)
     
     return(results)
@@ -86,6 +86,7 @@ def GetLatestTime():
     global project_id, LastUpdateTimeStamp
     # Now try to load the keys from DS:
     query = datastore.Client(project=project_id,namespace='golf-bot').query(kind="TeeTimesFound")
+    query.order = ["TimeStamp"]
     results = list(query.fetch())
 
     # Organize date for results
@@ -94,12 +95,12 @@ def GetLatestTime():
     for aResult in results:
         print(aResult)
         # Check for new course
-        if aResult not in ResultsSet:
-            ResultsSet[aResult] = []
+        if aResult["LocationName"] not in ResultsSet:
+            ResultsSet[aResult["LocationName"]] = []
 
         # Itterate Through list
         for aArray in aResult["Data"]:
-            ResultsSet[aResult].append({"Date": aArray["Date"], "PlayerCount": aArray["PlayerCount"], "Times": aArray["Times"] })
+            ResultsSet[aResult["LocationName"]].append({"Date": aArray["Date"], "PlayerCount": aArray["PlayerCount"], "Times": aArray["Times"] })
         
         LastUpdateTimeStamp = aResult["TimeStamp"]
 

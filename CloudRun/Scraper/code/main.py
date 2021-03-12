@@ -2,17 +2,18 @@ import collections
 import json
 import logging
 import os
+import random
+import string
 import sys
 import time
 from datetime import date, datetime, timedelta, timezone
-import random, string
 
 import google.cloud.logging
 import pytz
-from pytz import reference
 import requests
 from flask import Flask, jsonify
 from google.cloud import datastore, pubsub_v1
+from pytz import reference
 
 from golfcourse import golfcourse
 
@@ -140,6 +141,7 @@ def SaveFoundTimesToDataStore(Location, DataToSave):
         # Create the Cloud Datastore key for the new entity.
         task_key = datastore_client.key(kind,Location)
         task = datastore.Entity(key=task_key)
+        task['LocationName'] = Location
         task['Data'] = DataToAdd
         task['TimeStamp'] = datetime.now()
         datastore_client.put(task)
