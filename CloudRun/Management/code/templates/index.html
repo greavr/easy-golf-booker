@@ -8,6 +8,28 @@
     <li class="right"><a href="/about">About</a></li>
 </ul>
 <div class="content">
-    <h3> Coming Soon </h3>
+    <h3> Last Found Availability </h3>
+    <h4>{{ LastUpdateTime }}</h4>
+    <hr />
+    {% for key, value in FoundTimes.items()%}
+        {{ key }}<br />
+        <table>
+            <tr><th>Date</th><th>Player Count</th><th>Times Found</th></tr>
+            {% for arow in value %}
+              <tr>
+                <td>{{ arow['Date'] }}</td>
+                <td>{{ arow['PlayerCount'] }}</td>
+                <td>{% for aTime in arow['Times'] %}
+                      {{ aTime }}
+                        {% if not loop.last %}
+                        , 
+                        {% endif %}
+                    {% endfor %}   
+                </td>
+              </tr>
+            {% endfor %}
+          </table>
+          <br />
+    {% endfor %}
 </div>
 {% endblock %}

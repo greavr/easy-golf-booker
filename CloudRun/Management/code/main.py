@@ -1,9 +1,10 @@
+import json
+import os
+
+import google.cloud.logging
 import requests
 from flask import Flask, flash, redirect, render_template, request
-import os
 from google.cloud import datastore
-import google.cloud.logging
-import json
 
 # App Config
 app = Flask(__name__)
@@ -19,6 +20,7 @@ CourseList = []
 SearchTimes = []
 DaysOfWeek = []
 Players = []
+LastUpdateTimeStamp = ""
 
 # Function To Get Notification Times from DataStore
 def GetNotificationTimes():
@@ -59,17 +61,49 @@ def GetOptions():
 
     return(results)
 
-#Function To Get Log Data
+# Function To Get Log Data
 def GetLogData():
     global project_id
     # Now try to load the keys from DS:
     query = datastore.Client(project=project_id,namespace='golf-bot').query(kind="TeeTimeLog")
+    query.order = ["CourseName"]
     results = list(query.fetch())
-    return(results)
 
-# Function to save value to DataStore
-def SaveValue(ValueName: str, ValueItem: str, DataStoreKind: str):
-    pass
+    # Organize date for results
+    ResultsSet = {}
+
+    for aResult in results:
+        # Check for new course
+        if aResult["CourseName"] not in ResultsSet:
+            ResultsSet[aResult["CourseName"]] = []
+        # Add all non-Name attributes as a new list
+        ResultsSet[aResult["CourseName"]].append({"CourseName":aResult["CourseName"], "Date": aResult["Date"], "PlayerCount": aResult["PlayerCount"], "Times": aResult["Times"] })
+
+    return(ResultsSet)
+
+# Function To Get Latest data
+def GetLatestTime():
+    global project_id, LastUpdateTimeStamp
+    # Now try to load the keys from DS:
+    query = datastore.Client(project=project_id,namespace='golf-bot').query(kind="TeeTimesFound")
+    results = list(query.fetch())
+
+    # Organize date for results
+    ResultsSet = {}
+
+    for aResult in results:
+        print(aResult)
+        # Check for new course
+        if aResult not in ResultsSet:
+            ResultsSet[aResult] = []
+
+        # Itterate Through list
+        for aArray in aResult["Data"]:
+            ResultsSet[aResult].append({"Date": aArray["Date"], "PlayerCount": aArray["PlayerCount"], "Times": aArray["Times"] })
+        
+        LastUpdateTimeStamp = aResult["TimeStamp"]
+
+    return(ResultsSet)
 
 # Function to load values from DataStore
 def GetValues():
@@ -86,20 +120,7 @@ def GetValues():
 @app.route("/logs", methods=['GET','POST'])
 def GetLogs():
     DataStoreLogData = GetLogData()
-    for aData in DataStoreLogData:
-        print(aData)
     return render_template('logs.html',LogData=DataStoreLogData)
-
-#API EndPoint
-@app.route("/save", methods=['POST'])
-def save(valuesToSave=[]):
-    # Lookup where to save relative values
-   pass
-
-# Function to refresh the page
-@app.route("/load", methods=['GET'])
-def load():
-    pass
 
 # Function to refresh the page
 @app.route("/about", methods=['GET'])
@@ -116,7 +137,12 @@ def edit():
 #Main Function handler
 @app.route("/", methods=['GET'])
 def main():
-    return render_template('index.html')
+    # Get the latest values
+    global LastUpdateTimeStamp
+    LatestTimesFound = GetLatestTime()
+    print(LatestTimesFound)
+
+    return render_template('index.html', LastUpdateTime=LastUpdateTimeStamp, FoundTimes=LatestTimesFound)
 
 if __name__ == "__main__":
     ## Run APP

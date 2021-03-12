@@ -9,7 +9,7 @@
 </ul>
 <div class="content">
     <h3> Audit Logs </h3>
-    <div class="float-box">
+    <div class="float-box-log">
       <!-- Tab links -->
       <div class="tab">
         {% for aItem in LogData %}
@@ -18,14 +18,27 @@
       </div>
   
       <!-- Tab content -->
-      {% for aItem in LogData %}
-        <div id="{{ aItem['TeeTimeLog'] }}" class="tabcontent">
-          <h3>{{ aItem.TeeTimeLog }}</h3>
-          {{ aItem['Data'] }}
+      {% for key, value in LogData.items()%}
+        <div id="{{ key }}" class="tabcontent">
+            <table>
+              <tr><th>Course Name</th><th>Date</th><th>Player Count</th><th>Times Found</th></tr>
+              {% for arow in value %}
+                <tr>
+                  <td>{{ arow['CourseName'] }}</td>
+                  <td>{{ arow['Date'] }}</td>
+                  <td>{{ arow['PlayerCount'] }}</td>
+                  <td>{% for aTime in arow['Times'] %}
+                        {{ aTime }}
+                          {% if not loop.last %}
+                          , 
+                          {% endif %}
+                      {% endfor %}   
+                  </td>
+                </tr>
+              {% endfor %}
+            </table>
         </div>
         {% endfor %}
-        <br />
-        <button id="RefreshTimes" onclick="RefreshData()" type="button">Refresh Data</button>
     </div>
 </div>
 {% endblock %}

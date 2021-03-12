@@ -158,6 +158,13 @@ input[type=text]:focus, input[type=time]:focus, input[type=number]:focus, select
   width:33%;
 }
 
+.float-box-log {
+  float:left;
+  background-color: #f8f8f8;
+  padding: 10px;
+  width:100%;
+}
+
 .form-footer {
   font-size: 12px;
 }
@@ -218,4 +225,34 @@ input[type=text]:focus, input[type=time]:focus, input[type=number]:focus, select
   padding: 6px 12px;
   border: 1px solid #ccc;
   border-top: none;
+}
+
+
+/* Style the html table */
+th {
+  background-color: #4CAF50;
+  color: white;
+  padding: 15px;
+  text-align: center;
+  font-size: 16px;
+}
+
+tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+tr:hover {
+  background-color: #f5f5f593;
+}
+
+td {
+  border-bottom: 1px solid #ddd;
+  padding: 15px;
+  text-align: center;
+  font-size: 14px;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
 }
